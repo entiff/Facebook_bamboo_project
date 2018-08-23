@@ -1,0 +1,8 @@
+* fbdata.RData
+	- datafame 103473 obs. of  11 variables
+	- na.ommited from raw data
+	- only posts with string data.
+	- for more specific information of variables, reference rfacebook package.
+
+* LSA_171123.RData
+	- Final Worskpace data
