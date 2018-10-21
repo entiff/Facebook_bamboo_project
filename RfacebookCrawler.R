@@ -1,7 +1,7 @@
 library("Rfacebook")
 
-fbAuth <- fbOAuth(app_id = "1881608938717379", 
-                 app_secret = "6a5145b2b699d4644a8553518ff1833e",
+fbAuth <- fbOAuth(app_id = "", 
+                 app_secret = "",
                  extended_permissions = FALSE)
 
 # Generate End date of the month
