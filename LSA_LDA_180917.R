@@ -159,6 +159,13 @@ cord<-cord %*% diag(signs)
 
 text_lsa<-data.frame(cord=cord,file=file1[check])
 
+a<-LSA$dk
+which.max(a[,1])
+max(a[,1])
+order(a[,1])
+round(abs(a[order(abs(a[,1])),1]),3)
+head(abs(a[order(abs(a[,1]),decreasing = TRUE),5]))
+
 # 5. Visualize Result(LSA)
 
 showmedim <- function(dimen){
@@ -194,9 +201,22 @@ result.lda <- lda.collapsed.gibbs.sampler(documents = ldaform$documents,
                                           num.iterations = 5000, burnin = 1000,
                                           alpha = 0.01, eta = 0.01)
 
-#perplexity(result.lda, newdata = train_set)
-#perplexity(result.lda, newdata = valid_set)
-#But... let's see on python
+result.lda2 <- LDA(td, k = 30, method = "Gibbs",
+                   control = list(burnin = 1000, iter = 3000, keep = 50))
+
+result.lda3 <- LDA(td, k = 50, method = "Gibbs",
+                   control = list(burnin = 1000, iter = 3000, keep = 50))
+
+result.lda4 <- LDA(td, k = 20, method = "Gibbs",
+                   control = list(burnin = 1000, iter = 3000, keep = 50))
+
+perplexity(result.lda2, newdata = td)
+perplexity(result.lda3, newdata = td)
+perplexity(result.lda4, newdata = td)
+
+# we don't have such computing power like you..
+# so we just test k three times(k = 20, 30, 50)
+# based on perplexity, k = 30
 
 #=====================================================================#
 # Cf. parameters & options                                            #
