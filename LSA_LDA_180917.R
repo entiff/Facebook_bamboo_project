@@ -1,5 +1,5 @@
 #=========================================================#
-# Load Package
+#### 1) Load Package ####
 #=========================================================#
 
 packages = c("Rfacebook", "tm", "lsa", "wordcloud","ggplot2","KoNLP",
@@ -11,14 +11,15 @@ for (i in packages){
 }
 
 #devtools::install_github('haven-jeon/KoSpacing')
-library(KoSpacing) #if you interested in this package, visit here (https://github.com/haven-jeon/KoSpacing)
+library(KoSpacing) 
+#if you interested in KoSpacing package, visit here (https://github.com/haven-jeon/KoSpacing)
 
-spacing("제발이것좀띄어쓰기해주세요왜이렇게띄어쓰기를제대로안하는사람이많아요보아즈여러분들은아닐거라고믿어요글쓸때는띄어쓰기꼭합시다")
+spacing("제발이것좀띄어쓰기해주세요왜이렇게띄어쓰기를제대로안하는사람이많아요여러분들은아닐거라고믿어요글쓸때는띄어쓰기꼭합시다")
 
 # if you have trouble with installing, check the version of java and reinstall
 
 #=========================================================#
-# Setting
+#### 2) Setting ####
 #=========================================================#
 
 setwd("D://Facebook_bamboo_project/data")
@@ -31,20 +32,24 @@ options(mc.cores=1)
 useSejongDic()
 
 #=========================================================#
-# Crawling Data
+#### 3) Crawling Data ####
 #=========================================================#
+
+#### cf) issue ####
+# each post has more than 17 characters
+# remove meta data from post ex) year, time, post numbers and so on
 
 Posts <- read.csv("Bamboo_posts_17v.csv",header = TRUE)
 Posts <- data.frame(Posts$Sepped.v2)
 Posts <- as.data.frame(Posts[1:1000,])
 
-#load(file="BOAZ_topicmodeling_180920.RData")
+# load(file="topicmodeling_181106.RData")
 
 #=========================================================#
-# Preprocessing
+#### 4) Preprocessing ####
 #=========================================================#
 
-# 1. remove pucntuation: punctuation raise error
+#### ___1. remove pucntuation: punctuation raises error ####
 
 posts_v1 <- as.character(Posts$`Posts[1:1000, ]`)
 posts_v1 <- gsub("[[:punct:]]","",posts_v1)
@@ -52,15 +57,15 @@ posts_v1 <- gsub("[[:punct:]]","",posts_v1)
 # [:punct:] => [][!"#$%&'()*+,./:;<=>?@\^_`{|}~-]
 # I recommend you should play with regular expression if you interested in NLP -> https://regexr.com/
 
-# 2. remove redundant whitespace
+#### ___2. remove redundant whitespace ####
 
 posts_v1 <- gsub("\\s+"," ", posts_v1)
 
-# 3. spacing
+#### ___3. spacing ####
 
 posts_v1 <- spacing(posts_v1) #more than 200 charaters, it doesn't working
 
-# 4. extract noun
+#### ___4. extract noun ####
 
 ExtractWord <- function(doc){
   
@@ -77,18 +82,18 @@ ExtractWord <- function(doc){
   }
 }
 
-#To know about the simplepos22 -> https://brunch.co.kr/@mapthecity/9 
+# To know about the simplepos22 -> https://brunch.co.kr/@mapthecity/9 
 
 nouns = sapply(posts_v1, words, USE.NAMES = F)
 txt_noun1 <- nouns
 
-# 4. remove stopwords
+#### ___5. remove stopwords ####
 
 words <- read.csv("2nd_stopwords.txt",header=FALSE)
 words <- as.character(words$V1)
 
 #=========================================================#
-# Word Embedding
+#### 5) Word Embedding ####
 #=========================================================#
 
 corpus <- Corpus(VectorSource(nouns)) # assign vector value
@@ -96,10 +101,10 @@ corpus <- tm_map(corpus, removeNumbers)
 corpus <- tm_map(corpus, removeWords, words)
 
 #=========================================================#
-# LSA
+#### 6) LSA ####
 #=========================================================#
 
-# 1. Document-Term Matrix
+#### ___1. Document-Term Matrix ####
 
 uniTokenizer <- function(x) unlist(strsplit(as.character(x), "[[:space:]]+"))
 
@@ -116,17 +121,18 @@ control = list(tokenize = uniTokenizer,
 dtm <- DocumentTermMatrix(corpus, control=control) #invert to dtm using tokenizer
 object.size(dtm)
 
-Encoding(dtm$dimnames$Terms) = "UTF-8" #fucking encoding...ha...
+Encoding(dtm$dimnames$Terms) = "UTF-8" # encoding...ha...
 
 findFreqTerms(dtm,lowfreq = 5)
-# 2. Decrease Sparsity
+
+#### ___2. Decrease Sparsity ####
 
 td <- removeSparseTerms(dtm,0.999) # decrease matirx's sparsity using frequency
 as.numeric(object.size(dt)/object.size(dtm)) * 100 # ratio of reduced/ original
 
 td$dimnames$Terms[1:10]
 
-# 3. Visualize Words (Word Cloud) 
+#### ___3. Visualize Words (Word Cloud) ####
 
 check <- which(rowSums(as.matrix(td))>=1) # Once we make reduced matrix, maybe there is empty row. so we need to get rid of them
 td<-(td[check,])
@@ -140,8 +146,10 @@ gframe<-data.frame(term=names(TermFreq2),freq=TermFreq2)
 ggplot(data=gframe)+aes(x=term,y=freq)+geom_bar(stat="identity")+coord_flip()
 wordcloud(names(TermFreq2),TermFreq2,max.words=100,random.color=TRUE,colors=pal) # WOW ~
 
-# 4. Model(LSA)
+#### ___4. Model(LSA) ####
 # review about PCA https://wikidocs.net/7646
+
+# There is no golden rule for LSA, it depends on dataset and concern about analysis possibility
 
 LSA <-lsa(td,dim=5) # dimensions=5
 st <-LSA$tk #document ~ dimensions
@@ -166,7 +174,7 @@ order(a[,1])
 round(abs(a[order(abs(a[,1])),1]),3)
 head(abs(a[order(abs(a[,1]),decreasing = TRUE),5]))
 
-# 5. Visualize Result(LSA)
+#### ___5. Visualize Result(LSA) ####
 
 showmedim <- function(dimen){
   t<-rot$loadings[,dimen]
@@ -182,41 +190,52 @@ showmedim(4)
 showmedim(5)
 
 #=========================================================#
-# LDA
+#### 7) LDA ####
 #=========================================================#
 
-# 1. Model(LDA)
 
-#https://ratsgo.github.io/from%20frequency%20to%20semantics/2017/06/01/LDA/
+#### ___1. Model(LDA) ####
 
-#install.packages("lda")
-#install.packages("topicmodels")
+# https://ratsgo.github.io/from%20frequency%20to%20semantics/2017/06/01/LDA/
+
+# install.packages("lda")
+# install.packages("topicmodels")
 
 library(lda)
 library(topicmodels)
-ldaform <- dtm2ldaformat(td, omit_empty=TRUE)
 
-result.lda <- lda.collapsed.gibbs.sampler(documents = ldaform$documents,
-                                          K = 30, vocab = ldaform$vocab,
-                                          num.iterations = 5000, burnin = 1000,
-                                          alpha = 0.01, eta = 0.01)
+# There is no perplexity method for collased gibbs sampling
+# So, let's find proper k in Gibbs method
 
-result.lda2 <- LDA(td, k = 30, method = "Gibbs",
+result.lda_20 <- LDA(td, k = 20, method = "Gibbs",
                    control = list(burnin = 1000, iter = 3000, keep = 50))
 
-result.lda3 <- LDA(td, k = 50, method = "Gibbs",
+result.lda_30 <- LDA(td, k = 30, method = "Gibbs",
                    control = list(burnin = 1000, iter = 3000, keep = 50))
 
-result.lda4 <- LDA(td, k = 20, method = "Gibbs",
+result.lda_40 <- LDA(td, k = 40, method = "Gibbs",
+                     control = list(burnin = 1000, iter = 3000, keep = 50))
+
+result.lda_50 <- LDA(td, k = 50, method = "Gibbs",
                    control = list(burnin = 1000, iter = 3000, keep = 50))
 
-perplexity(result.lda2, newdata = td)
-perplexity(result.lda3, newdata = td)
-perplexity(result.lda4, newdata = td)
+perplexity(result.lda_20, newdata = td) # 503
+perplexity(result.lda_30, newdata = td) # 448
+perplexity(result.lda_40, newdata = td) # 404
+perplexity(result.lda_50, newdata = td) # 374
 
 # we don't have such computing power like you..
-# so we just test k three times(k = 20, 30, 50)
-# based on perplexity, k = 30
+# so we just test k four times(k = 20, 30, 40, 50)
+# based on perplexity, k = 50
+
+ldaform <- dtm2ldaformat(td, omit_empty=TRUE)
+
+# alpha, eta are hyperparameters but use 0.01 in general
+
+result.lda <- lda.collapsed.gibbs.sampler(documents = ldaform$documents,
+                                          K = 50, vocab = ldaform$vocab,
+                                          num.iterations = 5000, burnin = 1000,
+                                          alpha = 0.01, eta = 0.01)
 
 #=====================================================================#
 # Cf. parameters & options                                            #
@@ -234,7 +253,7 @@ result.lda$topics
 top.topic.words(result.lda$topics) # 20 words per topic
 result.lda$topic_sums #how many words 
 
-# 2. Visualization
+#### ___2. Visualization ####
 
 alpha = 0.01
 eta = 0.01
@@ -248,17 +267,13 @@ Bamboo_topics <- list(phi = phi,
                      vocab = ldaform$vocab,
                      term.frequency = TermFreq)
 
-options(encoding = 'UTF-8') #fucking encoding ... ha...
+options(encoding = 'UTF-8') # encoding ... ha...
 
 #install.packages("LDAvis")
 library(LDAvis)
 
 # create the JSON object to feed the visualization
-needtochangewords <-c(110,210,237,436,445,539,594,595,612,1191,1227,1228,1229,1230,1231,1232,1233,1234,1235,1237,1238,1239,1240,1241,1243,1247,1248,1249,1250)
-wordsasnumber <- c("110","210","237","436","445","539","594","595","612","1191","1227","1228","1229","1230","1231","1232","1233","1234","1235","1237","1238","1239","1240","1241","1243","1247","1248","1249","1250")
-
-Bamboo_topics$vocab[needtochangewords] <- wordsasnumber
-Bamboo_topics$term.frequency[needtochangewords] <-wordsasnumber
+# defalut method = PCA
 
 json <- createJSON(phi = Bamboo_topics$phi,
                    theta = Bamboo_topics$theta, 
@@ -271,10 +286,10 @@ library(servr)
 
 serVis(json, out.dir = 'vis', open.browser = TRUE)
 
-############################################################
+#==========================================================#
 #################### End!!! DO SAVE !!! ####################
-############################################################
+#==========================================================#
 
-#save.image(file = "BOAZ_topicmodeling_180920.RData")
+# save.image(file = "topicmodeling_181106.RData")
 
-############################################################
+#==========================================================#
